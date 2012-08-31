@@ -1,0 +1,4 @@
+#!/usr/bin/env python
+# -*- python-mode -*-
+from simple_rpc import main
+main()

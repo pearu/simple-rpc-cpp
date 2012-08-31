@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+# -*- python-mode -*-
+
+import re
+import os
+import sys
+
+re_prototype = re.compile(r'(?P<rtype>([\w_]+|))\s+(?P<fname>[\w_]+)\s*\((?P<args>[^)]*)\)\s*({|;)', re.I | re.S)
+
+filename = sys.argv[1]
+assert filename.endswith ('cpp'),`filename`
+
+prototypes = []
+f = open (filename, 'r')
+text = f.read ()
+f.close ()
+for m in re_prototype.finditer(text):
+    prototypes.append(m.group (0)[:-1].rstrip())
+
+prototypes = ';\n'.join(prototypes) + ';'
+
+name = os.path.splitext (filename)[0]
+headername = name + '.hpp'
+NAME = name.upper ()
+
+print 'writing', headername
+f = open (headername, 'w')
+f.write('''
+#ifndef %(NAME)s_HPP_DEFINED
+#define %(NAME)s_HPP_DEFINED
+%(prototypes)s
+#endif
+''' % locals ())
+f.close ()
