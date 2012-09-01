@@ -6,7 +6,7 @@ import os
 import sys
 import re
 
-re_prototype = re.compile(r'(?P<rtype>([\w_]+|))\s+(?P<fname>[\w_]+)\s*\((?P<args>[^)]*)\)\s*({|;)', re.I | re.S)
+re_prototype = re.compile(r'(?P<rtype>([\w_:<>]+|))\s+(?P<fname>[\w_:]+)\s*\((?P<args>[^)]*)\)\s*({|;)', re.I | re.S)
 def parse_prototypes(filename, functions = None):
     """ Scan filename for C++ functions and prototypes.
     
@@ -18,13 +18,15 @@ def parse_prototypes(filename, functions = None):
     Return
     ------
     prototypes : list
-      A list of `(<function name>, <function return type spec>, <args>)` tuples
+      A list of `(<function name>, <function return type spec>, <args>, <body>)` tuples
       where `<args>` is a list of `(<argument name>, <argument type spec>)` tuples.
+      `<body>` is None.
     """
     f = open (filename, 'r')
     text = f.read ()
     f.close()
     prototypes = []
+    print 'Creating RPC wrappers to functions:'
     for m in re_prototype.finditer(text):
         fname = m.group('fname')
         if functions is not None and fname not in functions:
@@ -42,7 +44,8 @@ def parse_prototypes(filename, functions = None):
                 aname = ''
                 atype = a
             args.append((aname, atype))
-        prototypes.append ((fname, rtype, args))
+        print '  ', m.group(0)[:-1].rstrip()
+        prototypes.append ((fname, rtype, args, None))
     return prototypes
 
 if __name__=='__main__':

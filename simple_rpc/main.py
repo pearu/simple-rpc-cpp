@@ -23,25 +23,29 @@ def main():
     prototypes = defaultdict(list)
     for filename in args.filepath:
         original_filename = os.path.basename(filename)
-        target_filename, ext = os.path.splitext(original_filename)
-        target_filename = 'SimpleRPC_' + original_filename
-        prototypes[original_filename, target_filename] += parse_prototypes(filename, args.functions)
+        prototypes[original_filename] += parse_prototypes(filename, args.functions)
 
-    for (original_filename, target_filename), prototype_list in prototypes.iteritems():
-        source_info = dict(FILENAME=os.path.basename(target_filename).upper().replace('.','_'),
+    special_list = [
+        ('set_debug_level', 'void', [('debug_level', 'const int &')], '%(srpc)sdebug_level = debug_level;')
+        ]
+
+    for original_filename, prototype_list in prototypes.iteritems():
+        source_info = dict(FILENAME=os.path.basename(original_filename).upper().replace('.','_'),
                            original_filename=os.path.basename(original_filename),
                            )
+        code_name = source_info['original_filename']
 
-        for prototype in prototype_list:
-            code_name = os.path.splitext(os.path.basename(args.filepath[0]))[0]
+        for prototype in special_list + prototype_list:
             interface_dict = make_interface_source(code_name, prototype)
             collect(source_info, interface_dict)
-        print 'creating file', target_filename
-        f = open(target_filename, 'w')
-        f.write(templates.client_header % (source_info))
+
+        client_filename = os.path.splitext(original_filename)[0] + '-rpc.cpp'
+        print 'creating file', client_filename
+        f = open(client_filename, 'w')
+        f.write(templates.client_source % (source_info))
         f.close()
 
-        server_filename = os.path.splitext(target_filename)[0] + '_server.cpp'
+        server_filename = os.path.splitext(original_filename)[0] + '-rpc-server.cpp'
         print 'creating file', server_filename
         f = open(server_filename, 'w')
         f.write(templates.server_source % (source_info))

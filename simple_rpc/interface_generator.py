@@ -7,10 +7,14 @@ from utils import tabulate, collect, joinlist, uniquestr, nextint
 import templates
 
 def isvector (typespec):
-    return re.search(r'vector\s*[<]', typespec) is not None
+    return re.search(r'(\A|(?<![\w_]))vector\s*[<]', typespec) is not None
+
+def isstring (typespec):
+    if isvector(typespec): return False
+    return re.search(r'(\A|(?<![\w_]))string(\Z|(?![\w_]))', typespec) is not None
 
 def isscalar(typespec):
-    return not (isvector(typespec))
+    return not (isvector(typespec) or isstring(typespec))
 
 def isresult(typespec):
     if typespec.startswith('const '):
@@ -29,10 +33,22 @@ def str2magic(s, _cache={}):
     _cache[magic] = s
     return magic
 
+def get_variable_typespec (typespec):
+    if typespec.endswith('&'):
+        variable_typespec = typespec[:-1].rstrip()            
+    else:
+        variable_typespec = typespec
+    if typespec.startswith ('const '):
+        variable_typespec = variable_typespec[6:].lstrip()
+    return variable_typespec
 
-def make_interface_source(code_name, (function_name, return_type, arguments)):
+def get_socket_io_methods(typespec):
+    if isscalar (typespec): return 'read_scalar', 'write_scalar'
+    if isstring (typespec): return 'read_string', 'write_container'
+    return 'read_container', 'write_container'
+
+def make_interface_source(code_name, (function_name, return_type, arguments, body)):
     srpc = uniquestr('srpc_')
-    CodeName = uniquestr(code_name.title().replace('_','').replace('.','_'))
 
     typedecl_args = joinlist(sep=', ')
     variables = joinlist(sep=', ')
@@ -43,27 +59,22 @@ def make_interface_source(code_name, (function_name, return_type, arguments)):
     send_arguments = joinlist(['true'],  sep='\n            && ')
     recieve_results = joinlist(['true'], sep='\n              && ')
 
-    print '  generating interface data for', function_name,'...'
 
     for name, typespec in arguments:
         typespec_names.append('%s %s' % (typespec, name))
         variables.append(name)
-        if typespec.endswith('&'):
-            variable_typespec = typespec[:-1].rstrip()            
-        else:
-            variable_typespec = typespec
-        if typespec.startswith ('const '):
-            variable_typespec = variable_typespec[6:].lstrip()
+        variable_typespec = get_variable_typespec (typespec)
 
         variable_declarations.append('%s %s;' % (variable_typespec, name))
-        if isscalar(typespec):
-            send_arguments.append('%(srpc)ssocket.write_scalar(%(name)s, "%(name)s")' % (locals()))
-            recieve_arguments.append('%(srpc)ssocket.read_scalar(%(name)s, "%(name)s")' % (locals()))
-            if isresult(typespec):
-                recieve_results.append('%(srpc)ssocket.read_scalar(%(name)s, "%(name)s")' % (locals()))
-                send_results.append('%(srpc)ssocket.write_scalar(%(name)s, "%(name)s")' % (locals()))
-        else:
-            raise NotImplementedError (`typespec`)
+        read_mth, write_mth = get_socket_io_methods(typespec)
+        
+        send_arguments.append('%(srpc)ssocket.%(write_mth)s(%(name)s, "%(name)s")' % (locals()))
+        recieve_arguments.append('%(srpc)ssocket.%(read_mth)s(%(name)s, "%(name)s")' % (locals()))
+        if not isscalar (typespec):
+            pass
+        elif isresult(typespec):
+            recieve_results.append('%(srpc)ssocket.%(read_mth)s(%(name)s, "%(name)s")' % (locals()))
+            send_results.append('%(srpc)ssocket.%(write_mth)s(%(name)s, "%(name)s")' % (locals()))
 
     if return_type=='void':
         return_declaration = ''
@@ -73,27 +84,22 @@ def make_interface_source(code_name, (function_name, return_type, arguments)):
         return_declaration = '%(return_type)s %(srpc)sreturn_value;' % (locals())
         return_statement = 'return %(srpc)sreturn_value;' % (locals())
         function_call = '%(srpc)sreturn_value = %(function_name)s(%(variables)s);' % (locals ())
-        if isscalar(return_type):
-            
-            recieve_results.append('%(srpc)ssocket.read_scalar(%(srpc)sreturn_value, "return_value")' % (locals()))
-            send_results.append('%(srpc)ssocket.write_scalar(%(srpc)sreturn_value, "return_value")' % (locals()))
-        else:
-            raise NotImplementedError (`return_type`)
+        read_mth, write_mth = get_socket_io_methods(return_type)
+        recieve_results.append('%(srpc)ssocket.%(read_mth)s(%(srpc)sreturn_value, "return_value")' % (locals()))
+        send_results.append('%(srpc)ssocket.%(write_mth)s(%(srpc)sreturn_value, "return_value")' % (locals()))
+
     function_prototype = '%(return_type)s %(function_name)s(%(typespec_names)s)' % locals()
 
     server_magic   = uniquestr(str2magic(code_name))
     function_magic = str2magic(function_prototype)
+    if body is not None:
+        function_call = body % (locals())
     server_switch_case = templates.server_switch_case % (locals ())
-
 
     return dict(
         srpc = srpc, # manglin prefix
-        CodeName = CodeName,
         server_magic = server_magic,
         wrapper_function_prototype = function_prototype,
-        function_method = templates.function_method % (locals()),
-        redefine_original_function = '#define %s SimpleRPC_ORIGINAL_%s' % (function_name, function_name),
-        define_wrapper_function = '#define %s SimpleRPC_%s::%s' % (function_name, CodeName, function_name),
-        undefine_original_function = '#undef %s' % (function_name),
+        function_implementation = templates.function_implementation % (locals()),
         server_switch_case = tabulate(server_switch_case, tabs=10),
         )

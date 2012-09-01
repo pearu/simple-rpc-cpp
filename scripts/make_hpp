@@ -5,19 +5,23 @@ import re
 import os
 import sys
 
-re_prototype = re.compile(r'(?P<rtype>([\w_]+|))\s+(?P<fname>[\w_]+)\s*\((?P<args>[^)]*)\)\s*({|;)', re.I | re.S)
-
+re_prototype = re.compile(r'(?P<rtype>([\w_:<>]+|))\s+(?P<fname>[\w_:]+)\s*\((?P<args>[^)]*)\)\s*({|;)', re.I | re.S)
+re_include = re.compile(r'\s*#\s*include\s*[<][\w_-]+[>]')
 filename = sys.argv[1]
 assert filename.endswith ('cpp'),`filename`
 
 prototypes = []
+includes = []
 f = open (filename, 'r')
 text = f.read ()
 f.close ()
 for m in re_prototype.finditer(text):
     prototypes.append(m.group (0)[:-1].rstrip())
+for m in re_include.finditer(text):
+    includes.append(m.group(0).strip())
 
 prototypes = ';\n'.join(prototypes) + ';'
+includes = '\n'.join(includes)
 
 name = os.path.splitext (filename)[0]
 headername = name + '.hpp'
@@ -28,7 +32,11 @@ f = open (headername, 'w')
 f.write('''
 #ifndef %(NAME)s_HPP_DEFINED
 #define %(NAME)s_HPP_DEFINED
+
+%(includes)s
+
 %(prototypes)s
+
 #endif
 ''' % locals ())
 f.close ()
