@@ -5,17 +5,24 @@ import re
 import os
 import sys
 
-re_prototype = re.compile(r'(?P<rtype>([\w_:<>]+|))\s+(?P<fname>[\w_:]+)\s*\((?P<args>[^)]*)\)\s*({|;)', re.I | re.S)
+re_prototype = re.compile(r'(?P<rtype>([\w_:<>]+|))\s+(?P<fname>[\w_:]+)\s*\((?P<args>[^)]*)\)\s*({|;)', re.I | re.S | re.M)
 re_include = re.compile(r'\s*#\s*include\s*[<][\w_-]+[>]')
 filename = sys.argv[1]
 assert filename.endswith ('cpp'),`filename`
 
 prototypes = []
 includes = []
+text = ''
 f = open (filename, 'r')
-text = f.read ()
+for line in f.readlines ():
+    i = line.find('//')
+    if i!=-1:
+        line = line[:i] + '\n'
+    text += line
 f.close ()
 for m in re_prototype.finditer(text):
+    i = m.start ()
+    prev = text[max (0,i-100):i].rstrip(' ')
     prototypes.append(m.group (0)[:-1].rstrip())
 for m in re_include.finditer(text):
     includes.append(m.group(0).strip())

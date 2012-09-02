@@ -9,16 +9,20 @@ import templates
 def isvector (typespec):
     return re.search(r'(\A|(?<![\w_]))vector\s*[<]', typespec) is not None
 
+def iscontainer(typespec):
+    return re.search(r'(\A|(?<![\w_]))(vector|deque|list|stack|queue|priority_queue|set|multiset|map|multimap|bitset|array|unordered_(map|multimap|set|multiset))\s*[<]', typespec) is not None
+
 def isstring (typespec):
-    if isvector(typespec): return False
+    if iscontainer(typespec): return False
     return re.search(r'(\A|(?<![\w_]))string(\Z|(?![\w_]))', typespec) is not None
 
 def isscalar(typespec):
-    return not (isvector(typespec) or isstring(typespec))
+    return not (iscontainer(typespec) or isstring(typespec))
 
 def isresult(typespec):
     if typespec.startswith('const '):
         return False
+    return typespec.endswith('&')
     if isscalar(typespec):
         return typespec.endswith('&')
     raise NotImplementedError (`typespec`)
@@ -44,8 +48,10 @@ def get_variable_typespec (typespec):
 
 def get_socket_io_methods(typespec):
     if isscalar (typespec): return 'read_scalar', 'write_scalar'
-    if isstring (typespec): return 'read_string', 'write_container'
-    return 'read_container', 'write_container'
+    if isstring (typespec): return 'read_string', 'write_string'
+    #if isstring (typespec): return 'read_string', 'write_container'
+    return 'read_serial', 'write_serial'
+    #return 'read_container', 'write_container'
 
 def make_interface_source(code_name, (function_name, return_type, arguments, body)):
     srpc = uniquestr('srpc_')
@@ -70,9 +76,9 @@ def make_interface_source(code_name, (function_name, return_type, arguments, bod
         
         send_arguments.append('%(srpc)ssocket.%(write_mth)s(%(name)s, "%(name)s")' % (locals()))
         recieve_arguments.append('%(srpc)ssocket.%(read_mth)s(%(name)s, "%(name)s")' % (locals()))
-        if not isscalar (typespec):
-            pass
-        elif isresult(typespec):
+        #if not isscalar (typespec):
+        #    pass
+        if isresult(typespec):
             recieve_results.append('%(srpc)ssocket.%(read_mth)s(%(name)s, "%(name)s")' % (locals()))
             send_results.append('%(srpc)ssocket.%(write_mth)s(%(name)s, "%(name)s")' % (locals()))
 
