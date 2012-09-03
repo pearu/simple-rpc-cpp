@@ -15,8 +15,8 @@ stdlib_app : stdlib_app.cpp
 stdlib_app-rpc : stdlib-rpc.cpp stdlib_app.cpp
 	g++ $(INCLUDE) -DSimpleRPC=SimpleRPC_stdlib stdlib_app.cpp stdlib-rpc.cpp -o stdlib_app-rpc $(RPC_BUILD_OPTS)
 
-stdlib_app-rpc-server : stdlib-rpc-server.cpp
-	g++ $(INCLUDE) stdlib-rpc-server.cpp -o stdlib_app-rpc-server $(RPC_BUILD_OPTS)
+stdlib_app-rpc-server : stdlib-rpc-server.cpp ../simple_rpc/include/stdlib.cpp
+	g++ $(INCLUDE) stdlib-rpc-server.cpp ../simple_rpc/include/stdlib.cpp -o stdlib_app-rpc-server $(RPC_BUILD_OPTS)
 
 test_stdlib : stdlib_app stdlib_app-rpc stdlib_app-rpc-server
 	./stdlib_app

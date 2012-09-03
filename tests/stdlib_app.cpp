@@ -32,6 +32,8 @@ main()
   simple_rpc::stdlib::memset(command+2, 0, 1);
   simple_rpc::stdlib::system(command);
   simple_rpc::stdlib::free(command);
+
+  simple_rpc::stdlib::system(std::string("pwd"));
 #endif
   std::cout << "EOF main" << std::endl; 
 }
