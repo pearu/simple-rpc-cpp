@@ -1,3 +1,11 @@
+/*
+  Provides Socker class that extends boost::asio::ip::tcp::socket with
+  various read and write methods.
+
+  Author: Pearu Peterson
+  Created: September 2012
+ */
+
 #ifndef SOCKET_HPP_DEFINED
 #define SOCKET_HPP_DEFINED
 
@@ -17,18 +25,6 @@
 
 namespace simple_rpc
 {
-
-#define TIMEIT(ELAPSED, BODY) \
-  {\
-    struct timeval start_time;\
-    struct timeval end_time;\
-    gettimeofday(&start_time, NULL);\
-    BODY \
-    gettimeofday(&end_time, NULL);\
-    double start = start_time.tv_sec*1000000 + (start_time.tv_usec); \
-    double end   = end_time.tv_sec*1000000 + (end_time.tv_usec); \
-    ELAPSED     = (end - start)/1000.0; \
-  }
 
 class Socket: public  boost::asio::ip::tcp::socket
 {
@@ -90,11 +86,8 @@ public:
     std::ostringstream archive_stream;
     boost::archive::text_oarchive archive(archive_stream);
     archive << value;
-    std::string outbound_data = archive_stream.str();
-    uint32_t sz = outbound_data.size();
-    if (!write_string(outbound_data, name + "_serialized"))
-      return false;
-    return true;
+    return write_string(archive_stream.str(), name + "_serialized");
+
   }
 
   template <typename T> bool read_serial(T &value, const std::string & name = "")
@@ -107,30 +100,32 @@ public:
     archive >> value;
     return true;
   }
-
-  template <typename T> bool write_container(const T &value, const std::string & name = "")
+  
+  template <typename T> bool write_vector(const std::vector<T> &value, const std::string & name = "")
   {
+    std::list< boost::asio::const_buffer > buffers;
     uint32_t sz = value.size();
-    if (!write_scalar(sz, name + ".size"))
-      return false;
+    buffers.push_back( boost::asio::buffer( &sz, sizeof(sz) ) );
+    buffers.push_back( boost::asio::buffer( value ) );
+
     boost::system::error_code error;
-    size_t len = boost::asio::write(*this, boost::asio::buffer( value ), error);
+    size_t len = boost::asio::write(*this, buffers, error);
     if (error)
       {
-	std::cerr<<m_appname<<":write_container<"<<typeid(T).name()<<">("<<name<<") error on write: "<<error.message ()<<std::endl;
+	std::cerr<<m_appname<<":write_vector<"<<typeid(T).name()<<">("<<name<<") error on write: "<<error.message ()<<std::endl;
 	return false;
       }
-    if (len != size_bytes(value))
+    if (len != size_bytes(value)+sizeof(sz))
       {
-	std::cerr<<m_appname<<":write_container<"<<typeid(T).name()<<">("<<name<<") expected to write "<<value.size()<<" bytes but wrote "<<len<<std::endl;
+	std::cerr<<m_appname<<":write_vector<"<<typeid(T).name()<<">("<<name<<") expected to write "<<value.size()+sizeof(sz)<<" bytes but wrote "<<len<<std::endl;
 	return false;
       }
     if (m_debug_level>1)
-      std::cout<<m_appname<<":write_container<"<<typeid(T).name()<<">("<<name<<") successfully wrote=["<<value.size()<<"]"<<std::endl;
+      std::cout<<m_appname<<":write_vector<"<<typeid(T).name()<<">("<<name<<") successfully wrote=["<<value.size()<<"]"<<std::endl;
     return true;
   }
 
-  template <typename T> bool read_container(T &value, const std::string & name = "")
+  template <typename T> bool read_vector(std::vector<T> &value, const std::string & name = "")
   {
     boost::system::error_code error;
     uint32_t sz = 0;
@@ -140,40 +135,36 @@ public:
     size_t len = boost::asio::read( *this, boost::asio::buffer( value ), error);
     if (error)
       {
-	std::cerr<<m_appname<<":read_scalar<"<<typeid(T).name()<<">("<<name<<") error="<<error.message ()<<std::endl;
+	std::cerr<<m_appname<<":read_vector<"<<typeid(T).name()<<">("<<name<<") error="<<error.message ()<<std::endl;
 	return false;
     }
     if (len != size_bytes(value))
     {
-      std::cerr<<m_appname<<":read_scalar<"<<typeid(T).name()<<">("<<name<<") expected to read "<<size_bytes(value)<<" bytes but got "<<len<<std::endl;
+      std::cerr<<m_appname<<":read_vector<"<<typeid(T).name()<<">("<<name<<") expected to read "<<size_bytes(value)<<" bytes but got "<<len<<std::endl;
       return false;
     }
     if (m_debug_level>1)
-      std::cout<<m_appname<<":read_scalar<"<<typeid(T).name()<<"g>("<<name<<") successfully read "<<len<<" bytes"<<std::endl;
+      std::cout<<m_appname<<":read_vector<"<<typeid(T).name()<<">("<<name<<") successfully read "<<len<<" bytes"<<std::endl;
 
     return true;
   }
 
   bool write_string(const std::string &value, const std::string & name = "")
   {
+    std::list< boost::asio::const_buffer > buffers;
     uint32_t sz = value.size();
-    if (!write_scalar(sz, name + ".size"))
-      return false;
+    buffers.push_back( boost::asio::buffer( &sz, sizeof(sz) ) );
+    buffers.push_back( boost::asio::buffer( value ) );
     boost::system::error_code error;
-    //double elapsed;
-    size_t len;
-    //TIMEIT(elapsed,
-    len = boost::asio::write(*this, boost::asio::buffer( value, sz ), error);
-	   //);
-    //std::cout<<"read_write write elapsed" << elapsed <<"ms"<<std::endl;
+    size_t len = boost::asio::write(*this, buffers, error);
     if (error)
       {
 	std::cerr<<m_appname<<":write_string("<<name<<") error on write: "<<error.message ()<<std::endl;
 	return false;
       }
-    if (len != size_bytes(value))
+    if (len != size_bytes(value)+sizeof(sz))
       {
-	std::cerr<<m_appname<<":write_string("<<name<<") expected to write "<<value.size()<<" bytes but wrote "<<len<<std::endl;
+	std::cerr<<m_appname<<":write_string("<<name<<") expected to write "<<value.size()+sizeof(sz)<<" bytes but wrote "<<len<<std::endl;
 	return false;
       }
     if (m_debug_level>1)
@@ -188,12 +179,7 @@ public:
     if (!read_scalar(sz, name + ".size"))
       return false;
     std::vector<char> data(sz);
-    //double elapsed;
-    size_t len;
-    //TIMEIT(elapsed,
-	   len = boost::asio::read( *this, boost::asio::buffer( data, sz ), error);
-	   //);
-	   //std::cout<<"read_string read elapsed" << elapsed <<"ms"<<std::endl;
+    size_t len = boost::asio::read( *this, boost::asio::buffer( data, sz ), error);
     if (error)
       {
 	std::cerr<<m_appname<<":read_string("<<name<<") error="<<error.message ()<<std::endl;

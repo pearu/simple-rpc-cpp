@@ -6,8 +6,14 @@ import re
 from utils import tabulate, collect, joinlist, uniquestr, nextint
 import templates
 
+
+
 def isvector (typespec):
     return re.search(r'(\A|(?<![\w_]))vector\s*[<]', typespec) is not None
+
+def vector_item_typespec(typespec):
+    i = typespec.find('<')
+    return typespec[i+1:-1].strip()
 
 def iscontainer(typespec):
     return re.search(r'(\A|(?<![\w_]))(vector|deque|list|stack|queue|priority_queue|set|multiset|map|multimap|bitset|array|unordered_(map|multimap|set|multiset))\s*[<]', typespec) is not None
@@ -49,9 +55,9 @@ def get_variable_typespec (typespec):
 def get_socket_io_methods(typespec):
     if isscalar (typespec): return 'read_scalar', 'write_scalar'
     if isstring (typespec): return 'read_string', 'write_string'
-    #if isstring (typespec): return 'read_string', 'write_container'
+    if isvector(typespec) and isscalar(vector_item_typespec(typespec)): 
+        return 'read_vector', 'write_vector'
     return 'read_serial', 'write_serial'
-    #return 'read_container', 'write_container'
 
 def make_interface_source(code_name, (function_name, return_type, arguments, body)):
     srpc = uniquestr('srpc_')

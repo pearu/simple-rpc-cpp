@@ -47,7 +47,7 @@ main()
 {
 #ifdef SimpleRPC
   simple_rpc::SimpleRPC rpc("127.0.0.1", 2340, 0);
-  simple_rpc::set_debug_level(0);
+  //simple_rpc::set_debug_level(0);
 #endif
 
   check_getarg((bool)3);
