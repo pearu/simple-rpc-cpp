@@ -26,7 +26,7 @@ def main():
         prototypes[original_filename] += parse_prototypes(filename, args.functions)
 
     special_list = [
-        ('set_debug_level', 'void', [('debug_level', 'const int &')], '%(srpc)sdebug_level = debug_level;')
+        ('simple_rpc::set_debug_level', 'void', [('debug_level', 'const int &')], '%(srpc)sdebug_level = debug_level;')
         ]
 
     for original_filename, prototype_list in prototypes.iteritems():

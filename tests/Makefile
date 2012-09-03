@@ -26,11 +26,11 @@ std_scalars_app-rpc-server : std_scalars-rpc-server.cpp std_scalars.cpp
 
 test_std_scalars: all_apps
 	./std_scalars_app                          # executes C/C++ functions directly
-	killall std_scalars_app-rpc-server || exit 0       # stop RPC server
+	killall ./std_scalars_app-rpc-server || exit 0       # stop RPC server
 	./std_scalars_app-rpc-server  & # start RPC server
 	@sleep 0.2
 	./std_scalars_app-rpc                      # executes C/C++ functions via RPC server
-	killall std_scalars_app-rpc-server || exit 0       # stop RPC server
+	killall ./std_scalars_app-rpc-server || exit 0       # stop RPC server
 
 clean:
 	rm -fv *.o *_app *_app-rpc* *-rpc*.cpp

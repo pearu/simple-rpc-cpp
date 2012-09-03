@@ -1,13 +1,15 @@
 
+#ifdef SimpleRPC
+#include "SimpleRPC.hpp"
+#endif
+
 #include <iostream>
 #include <typeinfo> 
 #include <sys/time.h>
 
 #include "std_scalars.hpp"
 
-#ifdef SimpleRPC
-#include "SimpleRPC.hpp"
-#endif
+
 
 
 static unsigned int check_getarg_success_count = 0;
@@ -44,8 +46,8 @@ template <typename T> bool check_getarg_container(T& a)
 main()
 {
 #ifdef SimpleRPC
-  SimpleRPC rpc("127.0.0.1", 2340, 0);
-  set_debug_level(0);
+  simple_rpc::SimpleRPC rpc("127.0.0.1", 2340, 0);
+  simple_rpc::set_debug_level(0);
 #endif
 
   check_getarg((bool)3);

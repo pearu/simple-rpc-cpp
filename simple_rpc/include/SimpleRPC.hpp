@@ -10,6 +10,9 @@
 #error "Must define -DSimpleRPC=SimpleRPC_<server name>"
 #endif
 
+namespace simple_rpc
+{
+
 class SimpleRPC
 {
 
@@ -76,5 +79,7 @@ public:
 };
 
 void set_debug_level(const int & debug_level);
+
+}
 
 #endif

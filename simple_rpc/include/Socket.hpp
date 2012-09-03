@@ -1,4 +1,3 @@
-
 #ifndef SOCKET_HPP_DEFINED
 #define SOCKET_HPP_DEFINED
 
@@ -15,6 +14,10 @@
 #include <boost/archive/text_oarchive.hpp>
 
 #include <sys/time.h>
+
+namespace simple_rpc
+{
+
 #define TIMEIT(ELAPSED, BODY) \
   {\
     struct timeval start_time;\
@@ -210,4 +213,5 @@ public:
 
 };
 
+}
 #endif

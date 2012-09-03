@@ -2,12 +2,19 @@ client_source = '''
 #include "%(original_filename)s"
 #include "SimpleRPC.hpp"
 
+namespace simple_rpc
+{
+
 int SimpleRPC::debug_level = 0;
 unsigned short SimpleRPC::port = 0;
 std::string SimpleRPC::host = "";
 bool SimpleRPC::success = false;
 
+}
+
 %(function_implementations)s
+
+
 '''
 
 function_implementation = '''
@@ -16,8 +23,8 @@ function_implementation = '''
     static const uint32_t %(srpc)sfunction_magic = %(function_magic)s;
     static const uint32_t %(srpc)sexpected_server_magic = %(server_magic)s;
     boost::asio::io_service %(srpc)sio_service;
-    Socket %(srpc)ssocket(%(srpc)sio_service, "%(function_name)s", SimpleRPC::get_debug_level());
-    if (SimpleRPC::establish_connection(%(srpc)sio_service, %(srpc)ssocket))
+    simple_rpc::Socket %(srpc)ssocket(%(srpc)sio_service, "%(function_name)s", simple_rpc::SimpleRPC::get_debug_level());
+    if (simple_rpc::SimpleRPC::establish_connection(%(srpc)sio_service, %(srpc)ssocket))
     {
       uint32_t %(srpc)sserver_magic = 0;
       uint64_t %(srpc)sconnection_magic = 0;
@@ -80,7 +87,7 @@ main()
     {
       uint32_t %(srpc)sfunction_magic = 0;
       uint64_t %(srpc)sconnection_magic = 0;
-      Socket %(srpc)ssocket(%(srpc)sio_service, "rpc-server", %(srpc)sdebug_level);
+      simple_rpc::Socket %(srpc)ssocket(%(srpc)sio_service, "rpc-server", %(srpc)sdebug_level);
       if (%(srpc)sdebug_level>0)
         std::cout << "rpc-server["<<(%(srpc)scounter+1)<<"] waits connection via port "<<%(srpc)sport<<"..."; std::cout.flush ();
       %(srpc)sacceptor.accept(%(srpc)ssocket);
