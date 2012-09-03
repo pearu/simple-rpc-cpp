@@ -82,8 +82,6 @@ def make_interface_source(code_name, (function_name, return_type, arguments, bod
         
         send_arguments.append('%(srpc)ssocket.%(write_mth)s(%(name)s, "%(name)s")' % (locals()))
         recieve_arguments.append('%(srpc)ssocket.%(read_mth)s(%(name)s, "%(name)s")' % (locals()))
-        #if not isscalar (typespec):
-        #    pass
         if isresult(typespec):
             recieve_results.append('%(srpc)ssocket.%(read_mth)s(%(name)s, "%(name)s")' % (locals()))
             send_results.append('%(srpc)ssocket.%(write_mth)s(%(name)s, "%(name)s")' % (locals()))

@@ -21,6 +21,8 @@
 namespace simple_rpc
 {
 
+  namespace stdlib {}
+
   void set_debug_level(const int & debug_level); // implementation is given in generated `*-rpc.cpp` file.
 
   class SimpleRPC

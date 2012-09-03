@@ -5,7 +5,7 @@ import re
 import os
 import sys
 
-re_prototype = re.compile(r'(?P<rtype>([\w_:<>]+|))\s+(?P<fname>[\w_:]+)\s*\((?P<args>[^)]*)\)\s*({|;)', re.I | re.S | re.M)
+re_prototype = re.compile(r'(?P<rtype>([\w_:<>*\s]+|))\s+(?P<fname>[\w_:]+)\s*\((?P<args>[^)]*)\)\s*({|;)', re.I | re.S | re.M)
 re_include = re.compile(r'\s*#\s*include\s*[<][\w_-]+[>]')
 filename = sys.argv[1]
 assert filename.endswith ('cpp'),`filename`
