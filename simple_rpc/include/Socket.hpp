@@ -33,7 +33,14 @@ private:
   std::string m_appname;
 
 private:
-  template <typename T> size_t size_bytes(const std::vector<T>& value) { return sizeof(T) * value.size(); } 
+  template <typename T> size_t size_bytes(const std::vector<T>& value) { return sizeof(T) * value.size(); }
+  size_t size_bytes(const std::list<boost::asio::const_buffer>& value)
+  { 
+    size_t sz = 0;
+    for (std::list<boost::asio::const_buffer>::const_iterator it = value.begin(); it != value.end(); it++)
+      sz += boost::asio::buffer_size(*it);
+    return sz;
+  }
   size_t size_bytes(const std::string& value) { return sizeof(char)*value.size(); } 
 
 public:
@@ -100,6 +107,26 @@ public:
     archive >> value;
     return true;
   }
+
+  bool write_buffer_list(const std::list< boost::asio::const_buffer > &value,
+			 const std::string & name = "")
+  {
+    boost::system::error_code error;
+    size_t len = boost::asio::write(*this, value, error);
+    if (error)
+      {
+	std::cerr<<m_appname<<":write_buffer_list("<<name<<") error on write: "<<error.message ()<<std::endl;
+	return false;
+      }
+    if (len != size_bytes(value))
+      {
+	std::cerr<<m_appname<<":write_buffer_list("<<name<<") expected to write "<<size_bytes(value)<<" bytes but wrote "<<len<<std::endl;
+	return false;
+      }
+    if (m_debug_level>1)
+      std::cout<<m_appname<<":write_buffer_list("<<name<<") successfully wrote "<<len<<" bytes"<<std::endl;
+    return true;
+  }
   
   template <typename T> bool write_vector(const std::vector<T> &value, const std::string & name = "")
   {
@@ -107,22 +134,7 @@ public:
     uint32_t sz = value.size();
     buffers.push_back( boost::asio::buffer( &sz, sizeof(sz) ) );
     buffers.push_back( boost::asio::buffer( value ) );
-
-    boost::system::error_code error;
-    size_t len = boost::asio::write(*this, buffers, error);
-    if (error)
-      {
-	std::cerr<<m_appname<<":write_vector<"<<typeid(T).name()<<">("<<name<<") error on write: "<<error.message ()<<std::endl;
-	return false;
-      }
-    if (len != size_bytes(value)+sizeof(sz))
-      {
-	std::cerr<<m_appname<<":write_vector<"<<typeid(T).name()<<">("<<name<<") expected to write "<<value.size()+sizeof(sz)<<" bytes but wrote "<<len<<std::endl;
-	return false;
-      }
-    if (m_debug_level>1)
-      std::cout<<m_appname<<":write_vector<"<<typeid(T).name()<<">("<<name<<") successfully wrote=["<<value.size()<<"]"<<std::endl;
-    return true;
+    return write_buffer_list(buffers, std::string("vector<") + typeid(T).name() + ">" + name);
   }
 
   template <typename T> bool read_vector(std::vector<T> &value, const std::string & name = "")
@@ -155,21 +167,10 @@ public:
     uint32_t sz = value.size();
     buffers.push_back( boost::asio::buffer( &sz, sizeof(sz) ) );
     buffers.push_back( boost::asio::buffer( value ) );
-    boost::system::error_code error;
-    size_t len = boost::asio::write(*this, buffers, error);
-    if (error)
-      {
-	std::cerr<<m_appname<<":write_string("<<name<<") error on write: "<<error.message ()<<std::endl;
-	return false;
-      }
-    if (len != size_bytes(value)+sizeof(sz))
-      {
-	std::cerr<<m_appname<<":write_string("<<name<<") expected to write "<<value.size()+sizeof(sz)<<" bytes but wrote "<<len<<std::endl;
-	return false;
-      }
-    if (m_debug_level>1)
-      std::cout<<m_appname<<":write_string("<<name<<") successfully wrote=["<<value.size()<<"]"<<std::endl;
-    return true;
+
+    std::string new_name("string ");
+    new_name += name;
+    return write_buffer_list(buffers, "string " + name);
   }
 
   bool read_string(std::string &value, const std::string & name = "")

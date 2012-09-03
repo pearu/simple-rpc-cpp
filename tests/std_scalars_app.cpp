@@ -47,7 +47,11 @@ main()
 {
 #ifdef SimpleRPC
   simple_rpc::SimpleRPC rpc("127.0.0.1", 2340, 0);
-  //simple_rpc::set_debug_level(0);
+  if (!rpc)
+    {
+      std::cout << "Failure in creating connection to RPC server. Quiting," << std::endl;
+      return 1;
+    }
 #endif
 
   check_getarg((bool)3);
@@ -105,7 +109,7 @@ main()
     gettimeofday(&end_time, NULL);\
     double start = start_time.tv_sec*1000000 + (start_time.tv_usec); \
     double end   = end_time.tv_sec*1000000 + (end_time.tv_usec); \
-    ELAPSED     = (end - start)/1000.0; \
+    ELAPSED     = (end - start); \
   }
 
   {
@@ -119,7 +123,7 @@ main()
 	getarg(v);
       }
 	   )
-    std::cout << "getarg<vector<double>> timing=" <<elapsed/count<<"ms per call"<<std::endl;
+    std::cout << "getarg<vector<double>> timing=" <<elapsed/count<<"us per call"<<std::endl;
 
 
     {
@@ -131,7 +135,7 @@ main()
 	}
 	     )
     }
-    std::cout << "getarg<string> timing=" <<elapsed/count<<"ms per call"<<std::endl;
+    std::cout << "getarg<string> timing=" <<elapsed/count<<"us per call"<<std::endl;
 
 
     {
@@ -143,7 +147,7 @@ main()
 	}
 	   )
     }
-    std::cout << "passarg<string> timing=" <<elapsed/count<<"ms per call"<<std::endl;
+    std::cout << "passarg<string> timing=" <<elapsed/count<<"us per call"<<std::endl;
 
     {
       double value = 3.14;
@@ -154,7 +158,7 @@ main()
 	}
 	     )
     }
-    std::cout << "getarg<double> timing=" <<elapsed/count<<"ms per call"<<std::endl;
+    std::cout << "getarg<double> timing=" <<elapsed/count<<"us per call"<<std::endl;
 
     {
       int value = 3.14;
@@ -165,7 +169,7 @@ main()
 	}
 	     )
     }
-    std::cout << "getarg<int> timing=" <<elapsed/count<<"ms per call"<<std::endl;
+    std::cout << "getarg<int> timing=" <<elapsed/count<<"us per call"<<std::endl;
   }
   return check_getarg_failure_count;
 }
