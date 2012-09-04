@@ -1,6 +1,40 @@
-client_source = '''
+client_header = '''
+/*
+  This file is generated using simple_rpc script.
+
+  For more information, see
+    http://code.google.com/p/simple-rpc-cpp/
+*/
+
+#ifndef %(FILENAME)s_RPC_HPP_DEFINED
+#define %(FILENAME)s_RPC_HPP_DEFINED
+#ifdef DISABLE_SIMPLE_RPC
+#define SIMPLE_RPC_CONNECT(HOST, PORT, DEBUG_LEVEL)
 #include "%(original_filename)s"
+#else
+#define SimpleRPC SimpleRPC_%(namespace)s
 #include "SimpleRPC.hpp"
+namespace simple_rpc 
+{ 
+  %(special_prototypes)s
+  namespace %(namespace)s 
+  {
+#include "%(original_filename)s"
+  }
+}
+#endif
+#endif
+'''
+
+client_source = '''
+/*
+  This file is generated using simple_rpc script.
+
+  For more information, see
+    http://code.google.com/p/simple-rpc-cpp/
+*/
+
+#include "%(namespace)s-rpc.hpp"
 
 namespace simple_rpc
 {
@@ -13,7 +47,6 @@ bool SimpleRPC::success = false;
 }
 
 %(function_implementations)s
-
 
 '''
 
@@ -68,7 +101,15 @@ function_implementation = '''
 '''
 
 server_source = '''
+/*
+  This file is generated using simple_rpc script.
+
+  For more information, see
+    http://code.google.com/p/simple-rpc-cpp/
+*/
+
 #include "%(original_filename)s"
+
 #include "Socket.hpp"
 
 main()
@@ -101,16 +142,11 @@ main()
           && %(srpc)ssocket.write_scalar(%(srpc)sconnection_magic, "connection_magic", -1)
          )
       {
-        //std::cerr << "  server_magic="<<%(srpc)sserver_magic<<std::endl;
-        //std::cerr << "  connection_magic="<<%(srpc)sconnection_magic<<std::endl;
-        //std::cerr << "  function_magic="<<%(srpc)sfunction_magic<<std::endl;
         switch (%(srpc)sfunction_magic)
         {
            %(server_switch_cases)s
            default :
              std::cerr << "rpc-server["<<%(srpc)scounter<<"] ERROR: unknown function_magic=="<<%(srpc)sfunction_magic<<std::endl;
-             //std::cerr << "  computed function magic="<<(%(srpc)sconnection_magic & 0xffffffff)<<std::endl;
-             //std::cerr << "  recieved function magic="<<%(srpc)sfunction_magic<<std::endl;
         }
       }
       else

@@ -59,7 +59,7 @@ def get_socket_io_methods(typespec):
         return 'read_vector', 'write_vector'
     return 'read_serial', 'write_serial'
 
-def make_interface_source(code_name, (function_name, return_type, arguments, body)):
+def make_interface_source(server_name, namespace, (function_name, return_type, arguments, body)):
     srpc = uniquestr('srpc_')
 
     typedecl_args = joinlist(sep=', ')
@@ -71,8 +71,9 @@ def make_interface_source(code_name, (function_name, return_type, arguments, bod
     send_arguments = joinlist(['true'],  sep='\n            && ')
     recieve_results = joinlist(['true'], sep='\n              && ')
 
-
     for name, typespec in arguments:
+        if name=='' and typespec=='void':
+            continue
         typespec_names.append('%s %s' % (typespec, name))
         variables.append(name)
         variable_typespec = get_variable_typespec (typespec)
@@ -98,9 +99,10 @@ def make_interface_source(code_name, (function_name, return_type, arguments, bod
         recieve_results.append('%(srpc)ssocket.%(read_mth)s(%(srpc)sreturn_value, "return_value")' % (locals()))
         send_results.append('%(srpc)ssocket.%(write_mth)s(%(srpc)sreturn_value, "return_value")' % (locals()))
 
-    function_prototype = '%(return_type)s %(function_name)s(%(typespec_names)s)' % locals()
+    function_prototype = '%(return_type)s %(namespace)s::%(function_name)s(%(typespec_names)s)' % locals()
+    special_prototype = '  %(return_type)s %(function_name)s(%(typespec_names)s);' % locals()
 
-    server_magic   = uniquestr(str2magic(code_name))
+    server_magic   = uniquestr(str2magic(server_name))
     function_magic = str2magic(function_prototype)
     if body is not None:
         function_call = body % (locals())
@@ -112,4 +114,5 @@ def make_interface_source(code_name, (function_name, return_type, arguments, bod
         wrapper_function_prototype = function_prototype,
         function_implementation = templates.function_implementation % (locals()),
         server_switch_case = tabulate(server_switch_case, tabs=10),
+        special_prototype = special_prototype,
         )

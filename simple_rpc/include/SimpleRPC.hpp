@@ -18,12 +18,18 @@
 #error "Must define -DSimpleRPC=SimpleRPC_<server name>"
 #endif
 
+#define SIMPLE_RPC_CONNECT(HOST, PORT, DEBUG_LEVEL) \
+  simple_rpc::SimpleRPC rpc(HOST, PORT, DEBUG_LEVEL); \
+  if (!rpc) \
+    { \
+      std::cout << "Failure in creating connection to RPC server. Quiting," << std::endl; \
+      exit(1); \
+    }
+
 namespace simple_rpc
 {
 
-  namespace stdlib {}
-
-  void set_debug_level(const int & debug_level); // implementation is given in generated `*-rpc.cpp` file.
+  void set_debug_level(const int & debug_level);
 
   class SimpleRPC
   {

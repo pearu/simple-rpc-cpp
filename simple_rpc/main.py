@@ -26,18 +26,32 @@ def main():
         prototypes[original_filename] += parse_prototypes(filename, args.functions)
 
     special_list = [
-        ('simple_rpc::set_debug_level', 'void', [('debug_level', 'const int &')], '%(srpc)sdebug_level = debug_level;'),
+        ('set_debug_level', 'void', [('debug_level', 'const int &')], '%(srpc)sdebug_level = debug_level;'),
+        ('get_counter', 'uint64_t', [('', 'void')], '%(srpc)sreturn_value = %(srpc)scounter;'),
         ]
 
     for original_filename, prototype_list in prototypes.iteritems():
         source_info = dict(FILENAME=os.path.basename(original_filename).upper().replace('.','_'),
                            original_filename=os.path.basename(original_filename),
+                           namespace = os.path.splitext(os.path.basename(original_filename))[0],
                            )
-        code_name = source_info['original_filename']
+        server_name = source_info['namespace']
+        source_info['NAMESPACE'] = source_info['namespace'].upper()
 
-        for prototype in special_list + prototype_list:
-            interface_dict = make_interface_source(code_name, prototype)
+        for prototype in special_list:
+            interface_dict = make_interface_source(server_name, 'simple_rpc', prototype)
             collect(source_info, interface_dict)
+
+        for prototype in prototype_list:
+            interface_dict = make_interface_source(server_name, 'simple_rpc::' + source_info['namespace'], prototype)
+            del interface_dict['special_prototype']
+            collect(source_info, interface_dict)
+
+        client_filename = os.path.splitext(original_filename)[0] + '-rpc.hpp'
+        print 'creating file', client_filename
+        f = open(client_filename, 'w')
+        f.write(templates.client_header % (source_info))
+        f.close()
 
         client_filename = os.path.splitext(original_filename)[0] + '-rpc.cpp'
         print 'creating file', client_filename

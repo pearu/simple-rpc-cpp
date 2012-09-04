@@ -1,16 +1,12 @@
 
+#include "std_scalars-rpc.hpp"
 #ifdef SimpleRPC
-#include "SimpleRPC.hpp"
+using namespace simple_rpc::std_scalars;
 #endif
 
 #include <iostream>
 #include <typeinfo> 
 #include <sys/time.h>
-
-#include "std_scalars.hpp"
-
-
-
 
 static unsigned int check_getarg_success_count = 0;
 static unsigned int check_getarg_failure_count = 0;
@@ -45,14 +41,7 @@ template <typename T> bool check_getarg_container(T& a)
 
 main()
 {
-#ifdef SimpleRPC
-  simple_rpc::SimpleRPC rpc("127.0.0.1", 2340, 0);
-  if (!rpc)
-    {
-      std::cout << "Failure in creating connection to RPC server. Quiting," << std::endl;
-      return 1;
-    }
-#endif
+  SIMPLE_RPC_CONNECT("127.0.0.1", 2340, 0);
 
   check_getarg((bool)3);
   check_getarg((char)3);
