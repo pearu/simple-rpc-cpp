@@ -171,7 +171,7 @@ case %(function_magic)s :
      {
        %(function_call)s
        if (%(send_results)s
-           && %(srpc)ssocket.write_scalar(%(srpc)sconnection_magic, "connection_magic")
+           && %(srpc)ssocket.write_scalar(%(srpc)sconnection_magic, "connection_magic", -1)
           ) {}
        else
          std::cerr << "rpc-server["<<%(srpc)scounter<<"] ERROR: failed to send %(function_name)s results" <<std::endl;
