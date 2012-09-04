@@ -57,5 +57,23 @@ test_std_scalars: std_scalars_app std_scalars_app-rpc std_scalars_app-rpc-server
 	./std_scalars_app-rpc                      # executes C/C++ functions via RPC server
 	killall ./std_scalars_app-rpc-server || exit 0       # stop RPC server
 
+example_dot_app : example_dot.hpp example_dot.cpp example_dot_app.cpp
+	g++ example_dot.cpp example_dot_app.cpp -o example_dot_app -DDISABLE_SIMPLE_RPC
+
+
+example_dot-rpc.cpp example_dot-rpc.hpp example_dot-rpc-server.cpp : example_dot.hpp
+	simple_rpc example_dot.hpp
+
+example_dot-rpc example_dot-rpc-server : example_dot-rpc.cpp example_dot_app.cpp
+	g++ example_dot-rpc.cpp example_dot_app.cpp -o example_dot_app-rpc $(INCLUDE) $(RPC_BUILD_OPTS)
+	g++ example_dot.cpp example_dot-rpc-server.cpp -o example_dot-rpc-server $(INCLUDE) $(RPC_BUILD_OPTS)
+
+test_example_dot : example_dot-rpc example_dot-rpc-server example_dot_app
+	killall ./example_dot-rpc-server || exit 0
+	./example_dot-rpc-server &
+	sleep 0.2
+	./example_dot_app-rpc
+	killall ./example_dot-rpc-server || exit 0
+
 clean:
 	rm -fv *.o *_app *_app-rpc* *-rpc*.cpp *-rpc*.hpp
