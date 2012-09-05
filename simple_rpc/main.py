@@ -15,11 +15,15 @@ def main():
     parser = argparse.ArgumentParser(description='Simple RPC code generator.')
     parser.add_argument("-n", "--name", help="name of the RPC server code",
                         type=str)
-    parser.add_argument('filepath', type=str, nargs='+', 
+    parser.add_argument('filepath', type=str, nargs='*', 
                    help='path to C++ header files that are scanned for prototypes')
     parser.add_argument('--functions', type=str,
                         help='comma separated list of functions to be wrapped')
+    parser.add_argument('--include-dir', action='store_true')
     args = parser.parse_args()
+    if args.include_dir:
+        print os.path.join(os.path.dirname (__file__), 'include')
+        return
     prototypes = defaultdict(list)
     for filename in args.filepath:
         original_filename = os.path.basename(filename)

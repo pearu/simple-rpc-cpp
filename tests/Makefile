@@ -1,5 +1,5 @@
 
-INCLUDE = -I../simple_rpc/include
+INCLUDE = -I`simple_rpc --include-dir`
 RPC_BUILD_OPTS = -pthread -lboost_system -lboost_serialization
 
 all: tests

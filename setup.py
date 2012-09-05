@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from glob import glob
 import os
 if os.path.exists('MANIFEST'): os.remove('MANIFEST')
 
@@ -11,7 +12,7 @@ def getfile():
         return inspect.getsourcefile(getfile)
 setup_dir = os.path.dirname(getfile())
 print setup_dir
-from distutils.core import setup
+from numpy.distutils.core import setup
 
 setup(name='simple_rpc',
       version='0.1',
@@ -21,4 +22,5 @@ setup(name='simple_rpc',
       url='http://code.google.com/p/simple-rpc-cpp/',
       packages=['simple_rpc'],
       scripts = [os.path.join(setup_dir, 'scripts/simple_rpc')],
+      data_files=[('simple_rpc/include', glob(os.path.join(setup_dir,'simple_rpc','include','*.hpp')))]
      )
