@@ -44,4 +44,27 @@ std::vector<std::string> getarg(const std::vector<std::string>& a);
 
 std::list<int> getarg(const std::list<int>& a);
 
+
+double sum(const std::vector<double>& a,
+	   const std::vector<double>& b,
+	   const std::vector<double>& c,
+	   const std::vector<double>& d,
+	   const std::vector<double>& e,
+	   const std::vector<double>& f
+	   );
+
+
+double sum(const std::vector<double>& a,
+	   const std::vector<double>& b
+	   );
+
+
+double sum(const std::vector<double>& a
+	   );
+
+
+bool swap(std::vector<double>& a,
+	  std::vector<double>& b
+	  );
+
 #endif

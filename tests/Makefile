@@ -44,7 +44,7 @@ std_scalars_app : std_scalars.hpp std_scalars_app.cpp std_scalars-rpc.hpp
 
 
 std_scalars_app-rpc : std_scalars-rpc.cpp std_scalars_app.cpp
-	g++ -g $(INCLUDE) -DSimpleRPC=SimpleRPC_std_scalars std_scalars_app.cpp std_scalars-rpc.cpp  -pthread -lboost_system -o std_scalars_app-rpc -lboost_serialization
+	g++ -g $(INCLUDE) std_scalars_app.cpp std_scalars-rpc.cpp  -pthread -lboost_system -o std_scalars_app-rpc -lboost_serialization
 
 std_scalars_app-rpc-server : std_scalars-rpc-server.cpp std_scalars.cpp
 	g++ -g $(INCLUDE) std_scalars-rpc-server.cpp std_scalars.cpp -pthread -lboost_system -o std_scalars_app-rpc-server -lboost_serialization

@@ -50,6 +50,28 @@ bool SimpleRPC::success = false;
 
 '''
 
+buffers_add_scalar = '''
+%(srpc)sbuffers.push_back( boost::asio::buffer( &%(name)s, sizeof(%(name)s) ) );
+'''
+
+buffers_add_vector = '''
+uint32_t %(srpc)ssz_%(name)s = %(name)s.size();
+%(srpc)sbuffers.push_back( boost::asio::buffer( &%(srpc)ssz_%(name)s, sizeof(%(srpc)ssz_%(name)s) ) );
+%(srpc)sbuffers.push_back( boost::asio::buffer( %(name)s ) );
+'''
+
+buffers_add_string = buffers_add_vector 
+
+buffers_add_serial = '''
+std::ostringstream %(srpc)sarchive_stream_%(name)s;
+boost::archive::text_oarchive %(srpc)sarchive_%(name)s(%(srpc)sarchive_stream_%(name)s);
+%(srpc)sarchive_%(name)s << %(name)s;
+const std::string& %(srpc)sstring_%(name)s = %(srpc)sarchive_stream_%(name)s.str();
+uint32_t %(srpc)ssz_%(name)s = %(srpc)sstring_%(name)s.size();
+%(srpc)sbuffers.push_back( boost::asio::buffer( &%(srpc)ssz_%(name)s, sizeof(%(srpc)ssz_%(name)s) ) );
+%(srpc)sbuffers.push_back( boost::asio::buffer( %(srpc)sstring_%(name)s ) );
+'''
+
 function_implementation = '''
   %(function_prototype)s
   {
@@ -70,7 +92,7 @@ function_implementation = '''
           && (%(srpc)scounter = %(srpc)sconnection_magic >> 32)
           && ((%(srpc)sconnection_magic & 0xffffffff)==%(srpc)sfunction_magic)) // server is knowledgeable
       {
-
+        %(buffers_add_arguments)s
         if (%(send_arguments)s)
         {
           %(return_declaration)s
@@ -170,10 +192,8 @@ case %(function_magic)s :
      if (%(recieve_arguments)s)
      {
        %(function_call)s
-       if (%(send_results)s
-           && %(srpc)ssocket.write_scalar(%(srpc)sconnection_magic, "connection_magic", -1)
-          ) {}
-       else
+       %(buffers_add_results)s
+       if (!%(send_results)s)
          std::cerr << "rpc-server["<<%(srpc)scounter<<"] ERROR: failed to send %(function_name)s results" <<std::endl;
      }
      else

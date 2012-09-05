@@ -22,3 +22,50 @@ std::vector<float> getarg(const std::vector<float>& a) { return a; }
 std::vector<double> getarg(const std::vector<double>& a) { return a; }
 std::vector<std::string> getarg(const std::vector<std::string>& a) { return a; }
 std::list<int> getarg(const std::list<int>& a) { return a; }
+
+double sum(const std::vector<double>& a,
+	   const std::vector<double>& b,
+	   const std::vector<double>& c,
+	   const std::vector<double>& d,
+	   const std::vector<double>& e,
+	   const std::vector<double>& f
+	   )
+{ 
+  double sum = 0;
+  for /**/(int i=0; i<a.size(); ++i)
+    sum += a[i] + b[i] + c[i] + d[i] + e[i] + f[i];
+  return sum; 
+}
+
+double sum(const std::vector<double>& a,
+	   const std::vector<double>& b
+	   )
+{ 
+  double sum = 0;
+  for /**/(int i=0; i<a.size(); ++i)
+    sum += a[i] + b[i];
+  return sum; 
+}
+
+double sum(const std::vector<double>& a
+	   )
+{ 
+  double sum = 0;
+  for /**/(int i=0; i<a.size(); ++i)
+    sum += a[i];
+  return sum; 
+}
+
+bool swap(std::vector<double>& a,
+	  std::vector<double>& b
+	  )
+{ 
+  double x;
+  for /**/(int i=0; i<a.size(); ++i)
+    {
+      x = a[i];
+      a[i] = b[i];
+      b[i] = x;
+    }
+  return true;
+}

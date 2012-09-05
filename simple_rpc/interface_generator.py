@@ -53,11 +53,11 @@ def get_variable_typespec (typespec):
     return variable_typespec
 
 def get_socket_io_methods(typespec):
-    if isscalar (typespec): return 'read_scalar', 'write_scalar'
-    if isstring (typespec): return 'read_string', 'write_string'
+    if isscalar (typespec): return 'read_scalar', 'buffers_add_scalar'
+    if isstring (typespec): return 'read_string', 'buffers_add_string'
     if isvector(typespec) and isscalar(vector_item_typespec(typespec)): 
-        return 'read_vector', 'write_vector'
-    return 'read_serial', 'write_serial'
+        return 'read_vector', 'buffers_add_vector'
+    return 'read_serial', 'buffers_add_serial'
 
 def make_interface_source(server_name, namespace, (function_name, return_type, arguments, body)):
     srpc = uniquestr('srpc_')
@@ -66,10 +66,11 @@ def make_interface_source(server_name, namespace, (function_name, return_type, a
     variables = joinlist(sep=', ')
     variable_declarations = joinlist(sep='\n')
     typespec_names = joinlist(sep=', ')
-    recieve_arguments = joinlist(['true'], sep='\n         && ')
-    send_results = joinlist(['true'],      sep='\n           && ')
-    send_arguments = joinlist(['true'],  sep='\n            && ')
-    recieve_results = joinlist(['true'], sep='\n              && ')
+    recieve_arguments = joinlist(sep='\n         && ')
+    send_arguments = 'true'
+    buffers_add_arguments = joinlist(sep='\n        ')
+    buffers_add_results = joinlist(sep='\n        ')
+    recieve_results = joinlist(sep='\n              && ')
 
     for name, typespec in arguments:
         if name=='' and typespec=='void':
@@ -80,24 +81,39 @@ def make_interface_source(server_name, namespace, (function_name, return_type, a
 
         variable_declarations.append('%s %s;' % (variable_typespec, name))
         read_mth, write_mth = get_socket_io_methods(typespec)
-        
-        send_arguments.append('%(srpc)ssocket.%(write_mth)s(%(name)s, "%(name)s")' % (locals()))
+        buffers_add_arguments.extend((getattr (templates, write_mth) % (locals ())).split ('\n'))
         recieve_arguments.append('%(srpc)ssocket.%(read_mth)s(%(name)s, "%(name)s")' % (locals()))
         if isresult(typespec):
             recieve_results.append('%(srpc)ssocket.%(read_mth)s(%(name)s, "%(name)s")' % (locals()))
-            send_results.append('%(srpc)ssocket.%(write_mth)s(%(name)s, "%(name)s")' % (locals()))
+            buffers_add_results.extend((getattr(templates, write_mth) % (locals ())).split ('\n'))
 
     if return_type=='void':
         return_declaration = ''
         return_statement = 'return;'
         function_call = '%(function_name)s(%(variables)s);' % (locals ())
     else:
+        name = '%(srpc)sreturn_value' % (locals ())
         return_declaration = '%(return_type)s %(srpc)sreturn_value;' % (locals())
         return_statement = 'return %(srpc)sreturn_value;' % (locals())
         function_call = '%(srpc)sreturn_value = %(function_name)s(%(variables)s);' % (locals ())
         read_mth, write_mth = get_socket_io_methods(return_type)
         recieve_results.append('%(srpc)ssocket.%(read_mth)s(%(srpc)sreturn_value, "return_value")' % (locals()))
-        send_results.append('%(srpc)ssocket.%(write_mth)s(%(srpc)sreturn_value, "return_value")' % (locals()))
+        buffers_add_results.extend((getattr(templates, write_mth) % (locals ())).split ('\n'))
+
+    if (buffers_add_arguments):
+        buffers_add_arguments.insert(0, 'std::list< boost::asio::const_buffer > %(srpc)sbuffers;' %(locals ()))
+        send_arguments = '%(srpc)ssocket.write_buffer_list(%(srpc)sbuffers, "%(function_name)s(%(variables)s)")' % (locals())
+
+
+    if (buffers_add_results):
+        buffers_add_results.insert(0, 'std::list< boost::asio::const_buffer > %(srpc)sbuffers;' %(locals ()))
+        buffers_add_results.append ('%(srpc)sbuffers.push_back( boost::asio::buffer( &%(srpc)sconnection_magic, sizeof(%(srpc)sconnection_magic) ) );' % (locals()))
+        send_results = ('%(srpc)ssocket.write_buffer_list(%(srpc)sbuffers, "%(function_name)s(%(variables)s)")' % (locals()))
+    else:
+        send_results = ('%(srpc)ssocket.write_scalar(%(srpc)sconnection_magic, "connection_magic", -1)' % (locals ()))
+
+    if not recieve_results: recieve_results = 'true'
+    if not recieve_arguments: recieve_arguments = 'true'
 
     function_prototype = '%(return_type)s %(namespace)s::%(function_name)s(%(typespec_names)s)' % locals()
     special_prototype = '  %(return_type)s %(function_name)s(%(typespec_names)s);' % locals()

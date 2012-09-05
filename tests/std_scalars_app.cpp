@@ -160,5 +160,68 @@ main()
     }
     std::cout << "getarg<int> timing=" <<elapsed/count<<"us per call"<<std::endl;
   }
+  {
+    int count = 100;
+    double elapsed;
+    {
+      int value = 3.14;
+      std::vector<double> a(3); 
+      a[0] = 1.1; a[1] = 2.2; a[2] = 3.3;
+      TIMEIT(elapsed,
+      for (int i=0; i<count; i++)
+	{
+	  sum(a);
+	}
+	     )
+    }
+    std::cout << "sum(a) timing=" <<elapsed/count<<"us per call"<<std::endl;
+
+    {
+      int value = 3.14;
+      std::vector<double> a(3); 
+      a[0] = 1.1; a[1] = 2.2; a[2] = 3.3;
+      TIMEIT(elapsed,
+      for (int i=0; i<count; i++)
+	{
+	  sum(a,a);
+	}
+	     )
+    }
+    std::cout << "sum(a,a) timing=" <<elapsed/count<<"us per call"<<std::endl;
+
+    {
+      int value = 3.14;
+      std::vector<double> a(3); 
+      a[0] = 1.1; a[1] = 2.2; a[2] = 3.3;
+      TIMEIT(elapsed,
+      for (int i=0; i<count; i++)
+	{
+	  sum(a,a,a,a,a,a);
+	}
+	     )
+    }
+    std::cout << "sum(a,a,a,a,a,a) timing=" <<elapsed/count<<"us per call"<<std::endl;
+
+    {
+      int value = 3.14;
+      std::vector<double> a(3), b(3,0); 
+      a[0] = 1.1; a[1] = 2.2; a[2] = 3.3;
+      swap(a,b);
+      if (!(a[0] == 0 && b[0] == 1.1))
+	{
+	  std::cout << "swap failed" << std::endl;
+	  return 0;
+	}
+      TIMEIT(elapsed,
+      for (int i=0; i<count; i++)
+	{
+	  swap(a,b);
+	}
+	     )
+    }
+    
+    std::cout << "swap(a,b) timing=" <<elapsed/count<<"us per call"<<std::endl;
+
+  }
   return check_getarg_failure_count;
 }
